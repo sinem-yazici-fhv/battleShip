@@ -28,7 +28,9 @@ public class GameService {
 
     public Game createGame() {
         Game game = new Game();
-        return gameRepository.save(game);
+        Game savedGame = gameRepository.save(game);
+        System.out.println("Spiel " + savedGame.getId() + " erstellt");
+        return savedGame;
     }
 
     public Optional<Game> getGame(Long id) {
@@ -69,6 +71,24 @@ public class GameService {
         game.addPlayer(playerDTO.getId());
         gameRepository.save(game);
         gameEventPublisher.publishPlayerJoinedGame(gameId, playerId);
+
+        // Wenn zwei Spieler im Spiel sind, gib eine Startmeldung aus
+        if (game.getPlayerIds().size() == 2) {
+            String player1Name = getPlayerName(game.getPlayerIds().get(0));
+            String player2Name = getPlayerName(game.getPlayerIds().get(1));
+            System.out.println("Spiel " + gameId + " " + player1Name + " gegen " + player2Name + " gestartet");
+        }
+    }
+
+    // Hilfsmethode, um den Spielernamen zu holen
+    private String getPlayerName(Long playerId) {
+        try {
+            String playerServiceUrl = "http://localhost:8082/players/" + playerId;
+            PlayerDTO playerDTO = restTemplate.getForObject(playerServiceUrl, PlayerDTO.class);
+            return playerDTO != null ? playerDTO.getName() : "Spieler " + playerId;
+        } catch (Exception e) {
+            return "Spieler " + playerId;
+        }
     }
 
     @RabbitListener(queues = "ship.sunk.queue")
@@ -84,12 +104,12 @@ public class GameService {
     }
 
     public void playerServiceFallback(Long gameId, Long playerId, Exception ex) {
-        System.out.println("Player Service not available: " + ex.getMessage());
+        System.out.println("Player Service nicht verfügbar: " + ex.getMessage());
     }
 
     public class GameNotFoundException extends RuntimeException {
         public GameNotFoundException(Long gameId) {
-            super("Game not found with id: " + gameId);
+            super("Spiel nicht gefunden mit ID: " + gameId);
         }
     }
 }

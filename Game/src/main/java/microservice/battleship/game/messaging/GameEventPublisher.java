@@ -13,14 +13,14 @@ public class GameEventPublisher {
 
         rabbitTemplate.setConfirmCallback((correlationData, ack, cause) -> {
             if (!ack) {
-        System.err.println("FEHLER: Nachricht nicht an RabbitMQ gesendet! Grund: " + cause);
+                System.err.println("FEHLER: Nachricht nicht an RabbitMQ gesendet! Grund: " + cause);
             }
         });
     }
 
     public void publishPlayerJoinedGame(Long gameId, Long playerId) {
         String message = gameId + ":" + playerId;
-        System.out.println("🔵 [DEBUG] Sending to RabbitMQ: " + message);
+        System.out.println("Spieler " + playerId + " ist Spiel " + gameId + " beigetreten");
         rabbitTemplate.convertAndSend(
             RabbitMQConfig.GAME_EVENTS_EXCHANGE,
             "player.joined",
@@ -30,12 +30,11 @@ public class GameEventPublisher {
 
     public void publishGameOver(Long gameId, Long winnerId) {
         String message = gameId + ":" + winnerId;
-        System.out.println("Publishing game over. Game:Winner: " + message);
+        System.out.println("Spiel " + gameId + " beendet. Gewinner: " + winnerId);
         rabbitTemplate.convertAndSend(
             RabbitMQConfig.GAME_EVENTS_EXCHANGE,
             "game.over",
             message
         );
     }
-
 }

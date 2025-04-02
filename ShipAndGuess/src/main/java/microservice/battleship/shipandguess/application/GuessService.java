@@ -31,12 +31,13 @@ public class GuessService {
         this.shipRepository = shipRepository;
         this.restTemplate = restTemplate;
         this.shipEventPublisher = shipEventPublisher;
-        System.out.println("GuessService initialized with publisher: " + (shipEventPublisher != null));
     }
 
     public Map<String, Object> makeGuess(Long playerId, Long gameId, int rowIndex, int col) {
+        // Prüfen, ob der Schuss innerhalb des Spielfelds liegt
         if (rowIndex < 0 || rowIndex >= BoardConfig.BOARD_SIZE || col < 0 || col >= BoardConfig.BOARD_SIZE) {
-            throw new IllegalArgumentException("Schuss liegt außerhalb des Boards.");
+            System.out.println("Spieler " + playerId + ": Schuss darf nicht außerhalb des Spielfelds sein");
+            throw new IllegalArgumentException("Schuss darf nicht außerhalb des Spielfelds sein");
         }
 
         PlayerDTO playerDTO = getPlayerFromPlayerService(playerId);
@@ -45,7 +46,7 @@ public class GuessService {
         Long opponentId = gameDTO.getPlayerIds().stream()
                 .filter(id -> !id.equals(playerId))
                 .findFirst()
-                .orElseThrow(() -> new RuntimeException("Opponent not found"));
+                .orElseThrow(() -> new RuntimeException("Gegner nicht gefunden"));
 
         boolean hit = false;
         Long hitShipId = null;
@@ -60,13 +61,34 @@ public class GuessService {
 
                 // Set the publisher before marking the hit
                 hitShip.setShipEventPublisher(shipEventPublisher);
-                System.out.println("Ship hit with publisher: " + (shipEventPublisher != null));
+
+                // Ausgabe für Treffer
+                System.out.println("Spieler " + playerId + " hat ein Schiff von Gegner " + opponentId + " getroffen");
 
                 // Mark the hit which may trigger a ship sunk event
                 hitShip.markHit();
+
+                // Prüfen ob alle Schiffe versenkt sind
+                boolean allSunk = true;
+                for (Ship s : opponentShips) {
+                    if (!s.isSunk() && !s.getId().equals(hitShipId)) {
+                        allSunk = false;
+                        break;
+                    }
+                }
+
+                if (hitShip.isSunk() && allSunk) {
+                    System.out.println("Alle Schiffe von Gegner " + opponentId + " wurden versenkt");
+                }
+
                 shipRepository.save(hitShip);
                 break;
             }
+        }
+
+        // Ausgabe für Nicht-Treffer
+        if (!hit) {
+            System.out.println("Spieler " + playerId + " hat kein Schiff des Gegners " + opponentId + " getroffen. Gegner ist dran.");
         }
 
         // Guess speichern
@@ -77,6 +99,11 @@ public class GuessService {
         guessRepository.save(guess);
 
         Map<String, Object> gameStatus = getGameStatus(gameId);
+
+        // Ausgabe für Game Over
+        if (gameStatus.get("gameOver") != null && (Boolean)gameStatus.get("gameOver")) {
+            System.out.println("Game over. Gewinner: " + gameStatus.get("winner"));
+        }
 
         Map<String, Object> response = new HashMap<>();
         response.put("result", hit ? "hit" : "miss");
@@ -105,19 +132,18 @@ public class GuessService {
         return restTemplate.getForObject(gameServiceUrl, Map.class);
     }
 
-    // Add fallback methods if they don't exist
     private PlayerDTO playerServiceFallback(Long playerId, Throwable throwable) {
-        System.out.println("Player Service not available: " + throwable.getMessage());
+        System.out.println("Player Service nicht verfügbar: " + throwable.getMessage());
         return new PlayerDTO();
     }
 
     private GameDTO gameServiceFallback(Long gameId, Throwable throwable) {
-        System.out.println("Game Service not available: " + throwable.getMessage());
+        System.out.println("Game Service nicht verfügbar: " + throwable.getMessage());
         return new GameDTO();
     }
 
     private Map<String, Object> gameStatusFallback(Long gameId, Throwable throwable) {
-        System.out.println("Game Status not available: " + throwable.getMessage());
+        System.out.println("Game Status nicht verfügbar: " + throwable.getMessage());
         Map<String, Object> fallback = new HashMap<>();
         fallback.put("gameOver", false);
         fallback.put("winner", null);

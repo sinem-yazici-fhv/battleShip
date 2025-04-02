@@ -12,7 +12,7 @@ public class GameEventListener {
         Long gameId = Long.parseLong(parts[0]);
         Long playerId = Long.parseLong(parts[1]);
 
-        System.out.println("Player " + playerId + " joined game " + gameId);
+        System.out.println("Spieler " + playerId + " ist Spiel " + gameId + " beigetreten");
     }
 
     @RabbitListener(queues = "game.over.queue")
@@ -20,6 +20,6 @@ public class GameEventListener {
         String[] parts = message.split(":");
         Long gameId = Long.parseLong(parts[0]);
         Long winnerId = Long.parseLong(parts[1]);
-        System.out.println("Game " + gameId + " over. Winner: " + winnerId);
+        System.out.println("Spiel " + gameId + " beendet. Gewinner: " + winnerId);
     }
 }

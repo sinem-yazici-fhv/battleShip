@@ -25,18 +25,22 @@ public class PlayerService {
         GameDTO gameDTO = restTemplate.getForObject(gameServiceUrl, GameDTO.class);
 
         if (gameDTO == null) {
-            throw new RuntimeException("Game not found" + gameId);
+            throw new RuntimeException("Spiel nicht gefunden: " + gameId);
         }
 
         Player player = new Player(name);
         player.setGameId(gameId);
-        return playerRepository.save(player);
+        Player savedPlayer = playerRepository.save(player);
+
+        // Neue Ausgabe hinzufügen
+        System.out.println("Spieler " + savedPlayer.getId() + " mit dem Namen '" + savedPlayer.getName() + "' erstellt");
+
+        return savedPlayer;
     }
 
     public Player gameServiceFallback(String name, Long gameId, Exception ex) {
-
-        System.out.println("Game Service not available: " + ex.getMessage());
-        Player fallbackPlayer = new Player("Fallback Player");
+        System.out.println("Game Service nicht verfügbar: " + ex.getMessage());
+        Player fallbackPlayer = new Player("Fallback Spieler");
         fallbackPlayer.setGameId(-1L); // Spiel-ID für Fallback
         return fallbackPlayer;
     }

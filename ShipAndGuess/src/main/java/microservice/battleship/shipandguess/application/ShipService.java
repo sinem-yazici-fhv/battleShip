@@ -1,6 +1,7 @@
 package microservice.battleship.shipandguess.application;
 
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import microservice.battleship.shipandguess.domain.BoardConfig;
 import microservice.battleship.shipandguess.domain.Ship;
 import microservice.battleship.shipandguess.dto.GameDTO;
 import microservice.battleship.shipandguess.dto.PlayerDTO;
@@ -25,10 +26,17 @@ public class ShipService {
         this.shipRepository = shipRepository;
         this.shipEventPublisher = shipEventPublisher;
         this.restTemplate = restTemplate;
-        System.out.println("ShipService initialized with publisher: " + (shipEventPublisher != null));
     }
 
     public Ship placeShip(Long playerId, Long gameId, int row, int col, int size, boolean isHorizontal) {
+        // Prüfen, ob das Schiff innerhalb des Spielfelds liegt
+        try {
+            validateShipPlacement(row, col, size, isHorizontal);
+        } catch (IllegalArgumentException e) {
+            System.out.println("Spieler " + playerId + ": " + e.getMessage());
+            throw e;
+        }
+
         PlayerDTO playerDTO = getPlayerFromPlayerService(playerId);
         GameDTO gameDTO = getGameFromGameService(gameId);
 
@@ -37,10 +45,28 @@ public class ShipService {
 
         // Set the publisher before saving
         ship.setShipEventPublisher(shipEventPublisher);
-        System.out.println("Ship created with publisher: " + (shipEventPublisher != null));
 
-        // Save and return
-        return shipRepository.save(ship);
+        // Save ship
+        Ship savedShip = shipRepository.save(ship);
+
+        // Neue Ausgabe für Schiffplatzierung
+        System.out.println("Spieler " + playerId + " hat in Spiel " + gameId + " ein Schiff gesetzt");
+
+        return savedShip;
+    }
+
+    private void validateShipPlacement(int row, int col, int size, boolean isHorizontal) {
+        if (row < 0 || row >= BoardConfig.BOARD_SIZE || col < 0 || col >= BoardConfig.BOARD_SIZE) {
+            throw new IllegalArgumentException("Schiff darf nicht außerhalb des Spielfelds gesetzt sein");
+        }
+
+        if (isHorizontal && (col + size > BoardConfig.BOARD_SIZE)) {
+            throw new IllegalArgumentException("Schiff darf nicht außerhalb des Spielfelds gesetzt sein (horizontal)");
+        }
+
+        if (!isHorizontal && (row + size > BoardConfig.BOARD_SIZE)) {
+            throw new IllegalArgumentException("Schiff darf nicht außerhalb des Spielfelds gesetzt sein (vertikal)");
+        }
     }
 
     @CircuitBreaker(name = "playerServiceCircuitBreaker", fallbackMethod = "playerServiceFallback")
@@ -77,12 +103,12 @@ public class ShipService {
     }
 
     public PlayerDTO playerServiceFallback(Long playerId, Throwable throwable) {
-        System.out.println("Player Service not available: " + throwable.getMessage());
+        System.out.println("Player Service nicht verfügbar: " + throwable.getMessage());
         return new PlayerDTO();
     }
 
     public GameDTO gameServiceFallback(Long gameId, Throwable throwable) {
-        System.out.println("Game Service not available: " + throwable.getMessage());
+        System.out.println("Game Service nicht verfügbar: " + throwable.getMessage());
         return new GameDTO();
     }
 }

@@ -61,6 +61,7 @@ public class Ship {
     if (hits >= size && !sunk) {
         sunk = true;
         if (shipEventPublisher != null) {
+            System.out.println("Schiff versenkt: GameID=" + gameId + ", PlayerID=" + playerId + ", ShipID=" + id);
             shipEventPublisher.publishShipSunk(gameId, playerId, id);
         }
     }

@@ -1,53 +1,41 @@
 # Game Microservice
 
+## Hauptfunktionen
+- Spielerstellung und -verwaltung
+- Spielstatusüberwachung
+- Gewinnerermittlung
+- Kommunikation mit Player und Ship Microservices
 
-## Übersicht
-Der **Game Microservice** verwaltet Spiele im Battleship-Spiel. Er ermöglicht das Erstellen von Spielen, das Hinzufügen von Spielern und das Überprüfen des Spielstatus.
-
-### Technologien
+## Technologien
 - Spring Boot
-- H2-Datenbank
-- RestTemplate (für Kommunikation mit anderen Microservices)
-- Resilience4j (Circuit Breaker)
+- H2 In-Memory Database
+- RabbitMQ für Event-basierte Kommunikation
+- Resilience4j für Circuit Breaking
+- RestTemplate für synchrone Kommunikation
 
----
+## Docker & RabbitMQ Konfiguration
+Der Microservice wurde mit einem RabbitMQ-Container in Docker getestet und läuft damit problemlos. Die Konfiguration:
+docker run -d --name rabbitmq -p 5672:5672 -p 15672:15672 rabbitmq:3-management
 
 ## API-Endpunkte
+- `POST /game` - Erstellt ein neues Spiel
+- `GET /game/{id}` - Ruft Spielinformationen ab
+- `GET /game/{gameId}/status` - Überprüft den Spielstatus
+- `POST /game/{gameId}/addPlayer/{playerId}` - Fügt einen Spieler zum Spiel hinzu
 
-### **POST /game**
-- **Beschreibung**: Erstellt ein neues Spiel.
-- **Rückgabe**: Das erstellte Spiel (`Game`).
 
-### **GET /game/{id}**
-- **Beschreibung**: Ruft ein Spiel anhand seiner ID ab.
-- **Parameter**: `id` (Spiel-ID).
-- **Rückgabe**: Das Spiel (`Game`), falls vorhanden.
-
-### **GET /game/{gameId}/status**
-- **Beschreibung**: Überprüft den Status eines Spiels.
-- **Parameter**: `gameId` (Spiel-ID).
-- **Rückgabe**: `gameOver` (boolean) und `winner` (Spieler-ID).
-
-### **POST /game/{gameId}/addPlayer/{playerId}**
-- **Beschreibung**: Fügt einen Spieler zu einem Spiel hinzu.
-- **Parameter**: `gameId` (Spiel-ID), `playerId` (Spieler-ID).
-
----
-
-## Abhängigkeiten
-- **Player Microservice**: `http://localhost:8082`
-- **Ship Microservice**: `http://localhost:8083`
-
----
+## Event-basierte Kommunikation
+- **Publizierte Events**:
+  - `player.joined` - Wenn ein Spieler einem Spiel beitritt
+  - `game.over` - Wenn ein Spiel beendet ist
+- **Gehörte Events**:
+  - `ship.sunk` - Wenn ein Schiff versenkt wurde
 
 ## Konfiguration
-- **Port**: `8081`
-- **H2-Datenbank**: `jdbc:h2:mem:gamesdb`
-  - **Webkonsole**: `http://localhost:8081/h2-console`
-  - **Benutzername**: `sa`
-  - **Passwort**: (leer)
+- Port: 8081
+- H2 Console: http://localhost:8081/h2-console
+- RabbitMQ: Standardkonfiguration (localhost:5672)
 
----
-## Circuit Breaker 
-Player Service: Fallback-Methode playerServiceFallback gibt eine Fehlermeldung aus,
-wenn der Player Microservice nicht verfügbar ist.
+## Beweis
+
+![img_1.png](img_1.png)

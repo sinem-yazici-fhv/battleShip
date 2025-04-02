@@ -1,44 +1,41 @@
 # Player Microservice
 
 ## Übersicht
-Der **Player Microservice** verwaltet Spieler im Battleship-Spiel. Er ermöglicht das Erstellen von Spielern und das Abrufen von Spielerinformationen.
+Der Player Microservice verwaltet Spielerinformationen und deren Teilnahme an Spielen.
 
-### Technologien
+## Hauptfunktionen
+- Spielererstellung
+- Spielerinformationen abrufen
+- Integration mit dem Game Microservice
+
+## Technologien
 - Spring Boot
-- H2-Datenbank
-- RestTemplate (für Kommunikation mit anderen Microservices)
-- Resilience4j (Circuit Breaker)
+- H2 In-Memory Database
+- RabbitMQ für Event-basierte Kommunikation
+- Resilience4j für Circuit Breaking
+- RestTemplate für synchrone Kommunikation
 
----
+## Docker & RabbitMQ Konfiguration
+Der Microservice wurde mit einem RabbitMQ-Container in Docker getestet und läuft damit problemlos. Die Konfiguration:
+docker run -d --name rabbitmq -p 5672:5672 -p 15672:15672 rabbitmq:3-management
 
 ## API-Endpunkte
+- `POST /players` - Erstellt einen neuen Spieler
+- `GET /players/{id}` - Ruft Spielerinformationen ab
 
-### **POST /players**
-- **Beschreibung**: Erstellt einen neuen Spieler.
-- **Parameter**: `name` (Spielername), `gameId` (Spiel-ID).
-- **Rückgabe**: Der erstellte Spieler (`Player`).
+## Event-basierte Kommunikation
+- **Gehörte Events**:
+  - `player.joined` - Loggt wenn ein Spieler einem Spiel beitritt
+  - `game.over` - Loggt das Spielende
 
-### **GET /players/{id}**
-- **Beschreibung**: Ruft einen Spieler anhand seiner ID ab.
-- **Parameter**: `id` (Spieler-ID).
-- **Rückgabe**: Der Spieler (`Player`), falls vorhanden.
-
----
-
-## Abhängigkeiten
-- **Game Microservice**: `http://localhost:8081`
-
----
+## Circuit Breaker
+- Fallback-Methode erstellt einen Dummy-Spieler, wenn der Game Service nicht verfügbar ist
 
 ## Konfiguration
-- **Port**: `8082`
-- **H2-Datenbank**: `jdbc:h2:mem:playerdb`
-  - **Webkonsole**: `http://localhost:8082/h2-console`
-  - **Benutzername**: `sa`
-  - **Passwort**: (leer)
+- Port: 8082
+- H2 Console: http://localhost:8082/h2-console
+- RabbitMQ: Standardkonfiguration (localhost:5672)
 
----
+## Beweis
 
-## Circuit Breaker 
-Game Service: Fallback-Methode gameServiceFallback erstellt einen Fallback-Spieler,
-wenn der Game Microservice nicht verfügbar ist.
+![img.png](img.png)

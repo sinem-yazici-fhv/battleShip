@@ -1,50 +1,44 @@
 # Ship and Guess Microservice
 
-## Übersicht
-Der **Ship and Guess Microservice** verwaltet Schiffe und Schüsse im Battleship-Spiel. Er ermöglicht das Platzieren von Schiffen und das Verarbeiten von Schüssen.
 
-### Technologien
+## Hauptfunktionen
+- Schiffplatzierung
+- Schussverarbeitung
+- Treffererkennung
+- Versenkungslogik
+
+## Technologien
 - Spring Boot
-- H2-Datenbank
-- RestTemplate (für Kommunikation mit anderen Microservices)
-- Resilience4j (Circuit Breaker)
+- H2 In-Memory Database
+- RabbitMQ für Event-basierte Kommunikation
+- Resilience4j für Circuit Breaking
+- RestTemplate für synchrone Kommunikation
 
----
+## Docker & RabbitMQ Konfiguration
+Der Microservice wurde mit einem RabbitMQ-Container in Docker getestet und läuft damit problemlos. Die Konfiguration:
+docker run -d --name rabbitmq -p 5672:5672 -p 15672:15672 rabbitmq:3-management
 
 ## API-Endpunkte
+- `POST /ships` - Platziert ein Schiff
+- `GET /ships` - Ruft Schiffe eines Spielers ab
+- `POST /guesses` - Verarbeitet einen Schuss
 
-### **POST /ships**
-- **Beschreibung**: Platziert ein Schiff auf dem Spielfeld.
-- **Parameter**: `playerId`, `gameId`, `row`, `col`, `size`, `isHorizontal`.
-- **Rückgabe**: Das platzierte Schiff (`Ship`).
+## Event-basierte Kommunikation
+- **Publizierte Events**:
+  - `ship.sunk` - Wenn ein Schiff versenkt wurde
+- **Gehörte Events**:
+  - `ship.sunk` - Loggt versenkte Schiffe
+  - `game.over` - Loggt das Spielende
 
-### **GET /ships**
-- **Beschreibung**: Ruft alle Schiffe eines Spielers in einem Spiel ab.
-- **Parameter**: `gameId`, `playerId`.
-- **Rückgabe**: Liste der Schiffe (`ShipDTO`).
-
-### **POST /guesses**
-- **Beschreibung**: Verarbeitet einen Schuss.
-- **Parameter**: `playerId`, `gameId`, `rowIndex`, `col`.
-- **Rückgabe**: Ergebnis des Schusses (`result`, `shipId`, `gameOver`, `winner`).
-
----
-
-## Abhängigkeiten
-- **Player Microservice**: `http://localhost:8082`
-- **Game Microservice**: `http://localhost:8081`
-
----
+## Besondere Features
+- Validierung der Schiffspositionen
+- Board-Größenkonfiguration (10x10)
+- Ausführliche Logging für Spielabläufe
 
 ## Konfiguration
-- **Port**: `8083`
-- **H2-Datenbank**: `jdbc:h2:mem:shipdb`
-  - **Webkonsole**: `http://localhost:8083/h2-console`
-  - **Benutzername**: `sa`
-  - **Passwort**: (leer)
+- Port: 8083
+- H2 Console: http://localhost:8083/h2-console
+- RabbitMQ: Standardkonfiguration (localhost:5672)
 
----
-
-## Circuit Breaker 
-- Player Service: Fallback-Methode playerServiceFallback gibt ein leeres PlayerDTO zurück.
-- Game Service: Fallback-Methode gameServiceFallback gibt ein leeres GameDTO zurück.
+## Beweis
+![img.png](img.png)

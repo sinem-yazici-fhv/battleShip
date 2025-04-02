@@ -13,9 +13,10 @@ public class ShipEventPublisher {
     }
 
     public void publishShipSunk(Long gameId, Long playerId, Long shipId) {
-        String message = gameId + ":" + playerId + ":" + shipId;
+      String message = gameId + ":" + playerId + ":" + shipId;
+        System.out.println("🔵 [SHIP SUNK] Publishing to exchange: " + RabbitMQConfig.GAME_EVENTS_EXCHANGE);
         rabbitTemplate.convertAndSend(
-            RabbitMQConfig.SHIP_EVENTS_EXCHANGE,
+            RabbitMQConfig.GAME_EVENTS_EXCHANGE,
             "ship.sunk",
             message
         );

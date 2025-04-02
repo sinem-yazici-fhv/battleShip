@@ -15,7 +15,7 @@ import java.util.stream.Collectors;
 
 @Service
 public class ShipService {
-     private final ShipRepository shipRepository;
+    private final ShipRepository shipRepository;
     private final RestTemplate restTemplate;
     private final ShipEventPublisher shipEventPublisher;
 
@@ -23,22 +23,25 @@ public class ShipService {
                      RestTemplate restTemplate,
                      ShipEventPublisher shipEventPublisher) {
         this.shipRepository = shipRepository;
-        this.restTemplate = restTemplate;
         this.shipEventPublisher = shipEventPublisher;
+        this.restTemplate = restTemplate;
+        System.out.println("ShipService initialized with publisher: " + (shipEventPublisher != null));
     }
 
-   public Ship placeShip(Long playerId, Long gameId, int row, int col, int size, boolean isHorizontal) {
-    PlayerDTO playerDTO = getPlayerFromPlayerService(playerId);
-    GameDTO gameDTO = getGameFromGameService(gameId);
+    public Ship placeShip(Long playerId, Long gameId, int row, int col, int size, boolean isHorizontal) {
+        PlayerDTO playerDTO = getPlayerFromPlayerService(playerId);
+        GameDTO gameDTO = getGameFromGameService(gameId);
 
-    // Erstelle Ship OHNE publisher Parameter
-    Ship ship = new Ship(row, col, size, isHorizontal, playerDTO.getId(), gameDTO.getId());
+        // Create the Ship
+        Ship ship = new Ship(row, col, size, isHorizontal, playerDTO.getId(), gameDTO.getId());
 
-    // Setze den publisher separat
-    ship.setShipEventPublisher(shipEventPublisher);
+        // Set the publisher before saving
+        ship.setShipEventPublisher(shipEventPublisher);
+        System.out.println("Ship created with publisher: " + (shipEventPublisher != null));
 
-    return shipRepository.save(ship);
-}
+        // Save and return
+        return shipRepository.save(ship);
+    }
 
     @CircuitBreaker(name = "playerServiceCircuitBreaker", fallbackMethod = "playerServiceFallback")
     private PlayerDTO getPlayerFromPlayerService(Long playerId) {
@@ -52,7 +55,7 @@ public class ShipService {
         return restTemplate.getForObject(gameServiceUrl, GameDTO.class);
     }
 
-     public List<ShipDTO> getShipsByGameAndPlayer(Long gameId, Long playerId) {
+    public List<ShipDTO> getShipsByGameAndPlayer(Long gameId, Long playerId) {
         List<Ship> ships = shipRepository.findByGameIdAndPlayerId(gameId, playerId);
         return ships.stream()
                 .map(this::convertToDTO)
@@ -73,7 +76,7 @@ public class ShipService {
         return shipDTO;
     }
 
-     public PlayerDTO playerServiceFallback(Long playerId, Throwable throwable) {
+    public PlayerDTO playerServiceFallback(Long playerId, Throwable throwable) {
         System.out.println("Player Service not available: " + throwable.getMessage());
         return new PlayerDTO();
     }

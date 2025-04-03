@@ -23,7 +23,7 @@ public class RabbitMQConfig {
         return new Queue(SHIP_SUNK_QUEUE);
     }
 
-    @Bean(name = "gameOverQueue")
+   @Bean(name = "gameOverQueue")
     public Queue gameOverQueue() {
         return new Queue(GAME_OVER_QUEUE);
     }

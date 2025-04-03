@@ -43,19 +43,22 @@ public class Game {
         Long player2Id = playerIds.get(1);
 
         boolean player1AllShipsSunk = areAllShipsSunk.apply(player1Id);
-        boolean player2AllShipsSunk = areAllShipsSunk.apply(player2Id);
+    boolean player2AllShipsSunk = areAllShipsSunk.apply(player2Id);
 
-       if (player1AllShipsSunk || player2AllShipsSunk) {
-        setGameOver(true);
-        setWinnerId(player1AllShipsSunk ? player2Id : player1Id);
-        gameEventPublisher.publishGameOver(id, getWinnerId());
+    if (player1AllShipsSunk || player2AllShipsSunk) {
+        if (!isGameOver()) {
+            setGameOver(true);
+            setWinnerId(player1AllShipsSunk ? player2Id : player1Id);
+            gameEventPublisher.publishGameOver(id, getWinnerId());
+            System.out.println("Spiel " + id + " beendet. Gewinner: " + getWinnerId());
+        }
     }
 
-        Map<String, Object> status = new HashMap<>();
-        status.put("gameOver", isGameOver());
-        status.put("winner", getWinnerId());
-        return status;
-    }
+    Map<String, Object> status = new HashMap<>();
+    status.put("gameOver", isGameOver());
+    status.put("winner", getWinnerId());
+    return status;
+}
 
     public Long getId() {
         return id;

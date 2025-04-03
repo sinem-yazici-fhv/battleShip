@@ -30,7 +30,6 @@ public class GameEventPublisher {
 
     public void publishGameOver(Long gameId, Long winnerId) {
         String message = gameId + ":" + winnerId;
-        System.out.println("Spiel " + gameId + " beendet. Gewinner: " + winnerId);
         rabbitTemplate.convertAndSend(
             RabbitMQConfig.GAME_EVENTS_EXCHANGE,
             "game.over",

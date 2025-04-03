@@ -97,7 +97,7 @@ public class GameService {
     }
 
     @RabbitListener(queues = "ship.sunk.queue")
-    @Transactional // Add this annotation to ensure the method runs in a transaction
+    @Transactional
     public void handleShipSunkEvent(String message) {
         String[] parts = message.split(":");
         Long gameId = Long.parseLong(parts[0]);

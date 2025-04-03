@@ -100,10 +100,6 @@ public class GuessService {
 
         Map<String, Object> gameStatus = getGameStatus(gameId);
 
-        // Ausgabe für Game Over
-        if (gameStatus.get("gameOver") != null && (Boolean)gameStatus.get("gameOver")) {
-            System.out.println("Game over. Gewinner: " + gameStatus.get("winner"));
-        }
 
         Map<String, Object> response = new HashMap<>();
         response.put("result", hit ? "hit" : "miss");

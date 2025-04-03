@@ -1,5 +1,6 @@
 package microservice.battleship.game.application;
 
+import org.springframework.transaction.annotation.Transactional; // Change this import
 import microservice.battleship.game.dto.ShipDTO;
 import microservice.battleship.game.messaging.GameEventPublisher;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
@@ -37,9 +38,13 @@ public class GameService {
         return gameRepository.findById(id);
     }
 
+    @Transactional(readOnly = true)
     public Map<String, Object> getGameStatus(Long gameId) {
         Game game = gameRepository.findById(gameId)
                 .orElseThrow(() -> new GameNotFoundException(gameId));
+
+        // Ensure playerIds is loaded by accessing it within the transaction
+        int playerCount = game.getPlayerIds().size();
 
         return game.checkGameStatus(playerId -> {
             Boolean cachedStatus = shipStatusCache.getOrDefault(gameId, new HashMap<>()).get(playerId);
@@ -47,7 +52,7 @@ public class GameService {
                 return cachedStatus;
             }
             return areAllShipsSunk(gameId, playerId);
-        },  gameEventPublisher);
+        }, gameEventPublisher);
     }
 
     private boolean areAllShipsSunk(Long gameId, Long playerId) {
@@ -92,6 +97,7 @@ public class GameService {
     }
 
     @RabbitListener(queues = "ship.sunk.queue")
+    @Transactional // Add this annotation to ensure the method runs in a transaction
     public void handleShipSunkEvent(String message) {
         String[] parts = message.split(":");
         Long gameId = Long.parseLong(parts[0]);
